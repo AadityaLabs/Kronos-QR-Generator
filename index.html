@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Next-Gen QR Architect</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- QR Code Generator Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+    <!-- Canvas Confetti for download milestones -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        tech: {
+                            50: '#F4F7FF',
+                            100: '#E9EFFF',
+                            200: '#D2DFFF',
+                            500: '#3B82F6',
+                            600: '#2563EB',
+                            700: '#1D4ED8',
+                            900: '#1E3A8A',
+                            accent: '#00D2FF',
+                        }
+                    },
+                    boxShadow: {
+                        'premium': '0 20px 50px -12px rgba(37, 99, 235, 0.12)',
+                        'glow': '0 0 30px rgba(0, 210, 255, 0.3)',
+                    }
+                }
+            }
+        }
+    </script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-gradient-to-br from-slate-50 via-[#F2F6FC] to-slate-100 min-h-screen text-slate-800 font-sans premium-grid relative overflow-x-hidden antialiased selection:bg-tech-100">
+
+    <canvas id="ambientBgCanvas" class="absolute inset-0 w-full h-full pointer-events-none z-0 opacity-40"></canvas>
+
+    <!-- Top Glow Effect -->
+    <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-gradient-to-b from-blue-200/30 to-transparent blur-[120px] pointer-events-none z-0"></div>
+
+    <!-- Main App Container -->
+    <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col min-h-screen justify-between">
+        
+        <!-- Header -->
+        <header class="flex flex-col sm:flex-row justify-between items-center gap-4 mb-8">
+            <div class="flex items-center gap-3">
+                <div class="relative">
+                    <div class="absolute inset-0 bg-gradient-to-r from-tech-500 to-tech-accent rounded-xl blur-md opacity-45 animate-pulse"></div>
+                    <div class="relative w-12 h-12 glass-panel rounded-xl flex items-center justify-center border border-white/40 shadow-sm">
+                        <i data-lucide="qr-code" class="w-6 h-6 text-tech-600"></i>
+                    </div>
+                </div>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-[10px] font-bold tracking-[0.2em] text-tech-600 bg-tech-100/60 px-2 py-0.5 rounded-full uppercase">Engine v5.0</span>
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
+                    </div>
+                    <h1 class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-slate-900 to-tech-900 bg-clip-text text-transparent">
+                        QR Studio <span class="font-light text-tech-500">Architect</span>
+                    </h1>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-3 glass-panel px-4 py-2 rounded-full border border-white/50 shadow-sm text-xs font-medium text-slate-600">
+                <div class="flex items-center gap-1.5">
+                    <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-500"></i>
+                    <span>Optimized Output</span>
+                </div>
+                <span class="text-slate-300">|</span>
+                <span id="quickSpecs">Ready</span>
+            </div>
+        </header>
+
+        <!-- Main Layout Matrix -->
+        <main class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start mb-12">
+            
+            <!-- LEFT COLUMN: Generator Parameters & Input Types (7 Cols) -->
+            <section class="lg:col-span-7 space-y-6">
+                
+                <!-- Category Tab Selectors -->
+                <div class="glass-panel p-1.5 rounded-2xl flex gap-1 overflow-x-auto no-scrollbar shadow-sm border border-slate-200/30">
+                    <button onclick="switchInputType('text')" id="tab-text" class="tab-btn active-tab flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs font-semibold transition-all duration-300 bg-tech-600 text-white shadow-md">
+                        <i data-lucide="link" class="w-4 h-4"></i>
+                        <span>Text & URL</span>
+                    </button>
+                    <button onclick="switchInputType('wifi')" id="tab-wifi" class="tab-btn flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs font-semibold transition-all duration-300 text-slate-600 hover:text-slate-900 hover:bg-slate-100">
+                        <i data-lucide="wifi" class="w-4 h-4"></i>
+                        <span>Wi-Fi Config</span>
+                    </button>
+                    <button onclick="switchInputType('vcard')" id="tab-vcard" class="tab-btn flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs font-semibold transition-all duration-300 text-slate-600 hover:text-slate-900 hover:bg-slate-100">
+                        <i data-lucide="user-square-2" class="w-4 h-4"></i>
+                        <span>vCard Pro</span>
+                    </button>
+                    <button onclick="switchInputType('email')" id="tab-email" class="tab-btn flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs font-semibold transition-all duration-300 text-slate-600 hover:text-slate-900 hover:bg-slate-100">
+                        <i data-lucide="mail" class="w-4 h-4"></i>
+                        <span>Email</span>
+                    </button>
+                    <button onclick="switchInputType('sms')" id="tab-sms" class="tab-btn flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs font-semibold transition-all duration-300 text-slate-600 hover:text-slate-900 hover:bg-slate-100">
+                        <i data-lucide="phone-call" class="w-4 h-4"></i>
+                        <span>SMS / Tel</span>
+                    </button>
+                </div>
+
+                <!-- Input Sub-Panels -->
+                <div class="glass-panel p-6 rounded-3xl shadow-premium border border-white/60 relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-tech-100/40 rounded-full blur-3xl pointer-events-none"></div>
+                    <div id="panel-text" class="input-panel space-y-4">
+                        <div class="flex justify-between items-center">
+                            <label class="text-sm font-bold text-slate-800 tracking-wide flex items-center gap-2">
+                                <i data-lucide="text-cursor-input" class="w-4 h-4 text-tech-500"></i>
+                                Resource Content
+                            </label>
+                            <span class="text-[10px] text-slate-400 font-mono" id="charCount">0 characters</span>
+                        </div>
+                        <div class="relative rounded-2xl bg-white border border-slate-200/80 transition-all duration-300 neon-border-focus overflow-hidden">
+                            <textarea id="inputText" rows="4" oninput="updateQRRealtime()" placeholder="Enter dynamic URL link or secure textual content here..." class="w-full bg-transparent border-none py-3.5 px-4 text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-0 resize-none"></textarea>
+                            <div class="absolute bottom-3 right-3 flex gap-2">
+                                <button onclick="pasteFromClipboard()" class="p-1.5 rounded-lg text-slate-400 hover:text-tech-600 hover:bg-tech-50 transition-colors" title="Paste clipboard">
+                                    <i data-lucide="clipboard-paste" class="w-4.5 h-4.5"></i>
+                                </button>
+                                <button onclick="clearInput('inputText')" class="p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 transition-colors" title="Clear field">
+                                    <i data-lucide="trash-2" class="w-4.5 h-4.5"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="panel-wifi" class="input-panel hidden space-y-4">
+                        <label class="text-sm font-bold text-slate-800 tracking-wide flex items-center gap-2">
+                            <i data-lucide="wifi" class="w-4 h-4 text-tech-500"></i>
+                            Wireless Network Blueprint
+                        </label>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="space-y-1.5">
+                                <label class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Network SSID</label>
+                                <div class="flex items-center rounded-xl bg-white border border-slate-200/80 p-1.5 neon-border-focus">
+                                    <i data-lucide="router" class="w-4 h-4 text-slate-400 ml-2"></i>
+                                    <input type="text" id="wifiSsid" oninput="updateQRRealtime()" placeholder="My Home WiFi" class="w-full bg-transparent border-none py-2 px-3 text-sm focus:outline-none focus:ring-0">
+                                </div>
+                            </div>
+                            <div class="space-y-1.5">
+                                <label class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Security Standard</label>
+                                <div class="flex items-center rounded-xl bg-white border border-slate-200/80 p-1.5 neon-border-focus">
+                                    <i data-lucide="shield-alert" class="w-4 h-4 text-slate-400 ml-2"></i>
+                                    <select id="wifiAuth" onchange="updateQRRealtime()" class="w-full bg-transparent border-none py-2 px-3 text-sm focus:outline-none focus:ring-0 text-slate-600">
+                                        <option value="WPA">WPA/WPA2 (Standard)</option>
+                                        <option value="WEP">WEP (Legacy)</option>
+                                        <option value="nopass">None (Open Network)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="space-y-1.5" id="wifiPasswordContainer">
+                            <label class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Access Key / Password</label>
+                            <div class="flex items-center rounded-xl bg-white border border-slate-200/80 p-1.5 neon-border-focus">
+                                <i data-lucide="key-round" class="w-4 h-4 text-slate-400 ml-2"></i>
+                                <input type="password" id="wifiPass" oninput="updateQRRealtime()" placeholder="•••••••••••••••" class="w-full bg-transparent border-none py-2 px-3 text-sm focus:outline-none focus:ring-0">
+                                <button type="button" onclick="togglePasswordVisibility('wifiPass')" class="p-1 text-slate-400 hover:text-tech-600 mr-2">
+                                    <i data-lucide="eye" class="w-4.5 h-4.5" id="eye-wifiPass"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="panel-vcard" class="input-panel hidden space-y-4">
+                        <label class="text-sm font-bold text-slate-800 tracking-wide flex items-center gap-2">
+                            <i data-lucide="user-square-2" class="w-4 h-4 text-tech-500"></i>
+                            vCard Professional Meta-data
+                        </label>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="space-y-1.5">
+                                <label class="text-[11px] font-bold uppercase tracking-wider text-slate-400">First Name</label>
+                                <input type="text" id="vcardFirst" oninput="updateQRRealtime()" placeholder="Alex" class="w-full rounded-xl bg-white border border-slate-200/80 py-2.5 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-tech-500/10 focus:border-tech-500">
+                            </div>
+                            <div class="space-y-1.5">
+                                <label class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Last Name</label>
+                                <input type="text" id="vcardLast" oninput="updateQRRealtime()" placeholder="Everhart" class="w-full rounded-xl bg-white border border-slate-200/80 py-2.5 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-tech-500/10 focus:border-tech-500">
+                            </div>
+                            <div class="space-y-1.5">
+                                <label class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Organization / Corporate</label>
+                                <input type="text" id="vcardOrg" oninput="updateQRRealtime()" placeholder="Matrix Labs Ltd" class="w-full rounded-xl bg-white border border-slate-200/80 py-2.5 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-tech-500/10 focus:border-tech-500">
+                            </div>
+                            <div class="space-y-1.5">
+                                <label class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Job Title</label>
+                                <input type="text" id="vcardTitle" oninput="updateQRRealtime()" placeholder="Principal Lead Designer" class="w-full rounded-xl bg-white border border-slate-200/80 py-2.5 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-tech-500/10 focus:border-tech-500">
+                            </div>
+                            <div class="space-y-1.5">
+                                <label class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Mobile Phone</label>
+                                <input type="text" id="vcardPhone" oninput="updateQRRealtime()" placeholder="+1 (555) 019-2834" class="w-full rounded-xl bg-white border border-slate-200/80 py-2.5 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-tech-500/10 focus:border-tech-500">
+                            </div>
+                            <div class="space-y-1.5">
+                                <label class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Primary Email</label>
+                                <input type="email" id="vcardEmail" oninput="updateQRRealtime()" placeholder="alex@matrixlabs.io" class="w-full rounded-xl bg-white border border-slate-200/80 py-2.5 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-tech-500/10 focus:border-tech-500">
+                            </div>
+                        </div>
+                        <div class="space-y-1.5">
+                            <label class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Portfolio URL</label>
+                            <input type="text" id="vcardUrl" oninput="updateQRRealtime()" placeholder="https://matrixlabs.io/alex" class="w-full rounded-xl bg-white border border-slate-200/80 py-2.5 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-tech-500/10 focus:border-tech-500">
+                        </div>
+                    </div>
+                    <div id="panel-email" class="input-panel hidden space-y-4">
+                        <label class="text-sm font-bold text-slate-800 tracking-wide flex items-center gap-2">
+                            <i data-lucide="mail" class="w-4 h-4 text-tech-500"></i>
+                            Pre-configured Email Package
+                        </label>
+                        <div class="space-y-1.5">
+                            <label class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Recipient Address</label>
+                            <input type="email" id="emailTo" oninput="updateQRRealtime()" placeholder="contact@domain.com" class="w-full rounded-xl bg-white border border-slate-200/80 py-2.5 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-tech-500/10 focus:border-tech-500">
+                        </div>
+                        <div class="space-y-1.5">
+                            <label class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Subject Blueprint</label>
+                            <input type="text" id="emailSubject" oninput="updateQRRealtime()" placeholder="Inquiry about custom design engines" class="w-full rounded-xl bg-white border border-slate-200/80 py-2.5 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-tech-500/10 focus:border-tech-500">
+                        </div>
+                        <div class="space-y-1.5">
+                            <label class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Body Draft Text</label>
+                            <textarea id="emailBody" rows="2" oninput="updateQRRealtime()" placeholder="Write custom structural text blocks here..." class="w-full rounded-xl bg-white border border-slate-200/80 py-2.5 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-tech-500/10 focus:border-tech-500 resize-none"></textarea>
+                        </div>
+                    </div>
+                    <div id="panel-sms" class="input-panel hidden space-y-4">
+                        <label class="text-sm font-bold text-slate-800 tracking-wide flex items-center gap-2">
+                            <i data-lucide="message-square" class="w-4 h-4 text-tech-500"></i>
+                            SMS Target Blueprint
+                        </label>
+                        <div class="space-y-1.5">
+                            <label class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Telephone Number</label>
+                            <input type="tel" id="smsPhone" oninput="updateQRRealtime()" placeholder="+1555000111" class="w-full rounded-xl bg-white border border-slate-200/80 py-2.5 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-tech-500/10 focus:border-tech-500">
+                        </div>
+                        <div class="space-y-1.5">
+                            <label class="text-[11px] font-bold uppercase tracking-wider text-slate-400">SMS Body Message</label>
+                            <textarea id="smsText" rows="2" oninput="updateQRRealtime()" placeholder="Enter message body here..." class="w-full rounded-xl bg-white border border-slate-200/80 py-2.5 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-tech-500/10 focus:border-tech-500 resize-none"></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="glass-panel p-6 rounded-3xl shadow-premium border border-white/60 space-y-6">
+                    <h3 class="text-sm font-bold text-slate-800 tracking-wider uppercase flex items-center gap-2">
+                        <i data-lucide="sliders" class="w-4 h-4 text-tech-500"></i>
+                        Aesthetic Vector customizer
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="space-y-3">
+                            <label class="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">Foreground Type & Palette</label>
+                            <div class="flex items-center gap-3">
+                                <div class="flex items-center gap-1.5 bg-slate-100 p-1 rounded-lg">
+                                    <button id="colorModeSolid" onclick="setColorMode('solid')" class="px-2 py-1 text-[11px] font-bold rounded-md bg-white text-tech-600 shadow-sm transition-all duration-300">Solid</button>
+                                    <button id="colorModeGradient" onclick="setColorMode('gradient')" class="px-2 py-1 text-[11px] font-bold rounded-md text-slate-500 hover:text-slate-800 transition-all duration-300">Gradient</button>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <div class="relative w-8 h-8 rounded-lg border border-slate-200 overflow-hidden cursor-pointer" title="Base/Solid Color">
+                                        <input type="color" id="primaryColor" value="#2563EB" oninput="updateQRRealtime()" class="absolute -inset-1 w-12 h-12 cursor-pointer border-none bg-transparent">
+                                    </div>
+                                    <div id="gradColorContainer" class="relative w-8 h-8 rounded-lg border border-slate-200 overflow-hidden cursor-pointer hidden" title="Gradient Offset Color">
+                                        <input type="color" id="gradientColor" value="#00D2FF" oninput="updateQRRealtime()" class="absolute -inset-1 w-12 h-12 cursor-pointer border-none bg-transparent">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="space-y-3">
+                            <label class="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">Background Surface</label>
+                            <div class="flex items-center gap-3">
+                                <div class="relative w-8 h-8 rounded-lg border border-slate-200 overflow-hidden cursor-pointer">
+                                    <input type="color" id="bgColor" value="#FFFFFF" oninput="updateQRRealtime()" class="absolute -inset-1 w-12 h-12 cursor-pointer border-none bg-transparent">
+                                </div>
+                                <span class="text-xs text-slate-500 font-medium">Clear white recommended</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">Select Curated Design Theme</label>
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                            <button onclick="applyPreset('#1D4ED8', '#00D2FF', 'gradient')" class="flex items-center gap-2 p-2 bg-white rounded-xl border border-slate-200/50 hover:border-tech-500/50 text-left transition-all duration-200">
+                                <div class="w-5 h-5 rounded-md bg-gradient-to-r from-blue-700 to-cyan-400"></div>
+                                <span class="text-[10px] font-bold text-slate-600">Ocean Neon</span>
+                            </button>
+                            <button onclick="applyPreset('#6366F1', '#EC4899', 'gradient')" class="flex items-center gap-2 p-2 bg-white rounded-xl border border-slate-200/50 hover:border-tech-500/50 text-left transition-all duration-200">
+                                <div class="w-5 h-5 rounded-md bg-gradient-to-r from-indigo-500 to-pink-500"></div>
+                                <span class="text-[10px] font-bold text-slate-600">Sunset Flow</span>
+                            </button>
+                            <button onclick="applyPreset('#10B981', '#059669', 'solid')" class="flex items-center gap-2 p-2 bg-white rounded-xl border border-slate-200/50 hover:border-tech-500/50 text-left transition-all duration-200">
+                                <div class="w-5 h-5 rounded-md bg-emerald-500"></div>
+                                <span class="text-[10px] font-bold text-slate-600">Emerald Clean</span>
+                            </button>
+                            <button onclick="applyPreset('#1E293B', '#1E293B', 'solid')" class="flex items-center gap-2 p-2 bg-white rounded-xl border border-slate-200/50 hover:border-tech-500/50 text-left transition-all duration-200">
+                                <div class="w-5 h-5 rounded-md bg-slate-800"></div>
+                                <span class="text-[10px] font-bold text-slate-600">Tech Slate</span>
+                            </button>
+                        </div>
+                    </div>
+                    <hr class="border-slate-200/50">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="space-y-2">
+                            <label class="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">Matrix Dot Shape</label>
+                            <select id="moduleStyle" onchange="updateQRRealtime()" class="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-tech-500/10 text-slate-700">
+                                <option value="classic">Classic Squares</option>
+                                <option value="rounded">Rounded Squares</option>
+                                <option value="dots">Circular Dots</option>
+                                <option value="liquid">Modern Liquid (Smooth)</option>
+                            </select>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">Corner Eye Design</label>
+                            <select id="eyeStyle" onchange="updateQRRealtime()" class="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-tech-500/10 text-slate-700">
+                                <option value="classic">Sharp Tech Standard</option>
+                                <option value="rounded">Smooth Outer Rings</option>
+                                <option value="circular">Circular Eyes</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="space-y-3">
+                        <label class="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">Brand Centerpiece Integration</label>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            <div class="col-span-1 md:col-span-2 flex items-center gap-3">
+                                <button onclick="selectLogoPreset('none')" id="logo-none" class="logo-tab active-logo flex-1 py-2 px-3 bg-tech-600 text-white border border-tech-500 text-[11px] font-bold rounded-lg transition-all duration-300">None</button>
+                                <button onclick="selectLogoPreset('custom')" id="logo-custom" class="logo-tab flex-1 py-2 px-3 bg-white text-slate-600 hover:text-slate-800 border border-slate-200 text-[11px] font-bold rounded-lg transition-all duration-300 flex items-center justify-center gap-1">
+                                    <i data-lucide="upload-cloud" class="w-3.5 h-3.5"></i> Custom
+                                </button>
+                            </div>
+                            <div class="flex items-center gap-1 justify-between bg-slate-100 p-1 rounded-lg">
+                                <button onclick="selectLogoPreset('link')" id="logo-link" class="logo-preset p-1.5 rounded-md hover:bg-white text-slate-400 hover:text-slate-700 transition-all duration-200" title="Web Link logo">
+                                    <i data-lucide="globe" class="w-4 h-4"></i>
+                                </button>
+                                <button onclick="selectLogoPreset('wifi')" id="logo-wifi" class="logo-preset p-1.5 rounded-md hover:bg-white text-slate-400 hover:text-slate-700 transition-all duration-200" title="WiFi logo">
+                                    <i data-lucide="wifi" class="w-4 h-4"></i>
+                                </button>
+                                <button onclick="selectLogoPreset('mail')" id="logo-mail" class="logo-preset p-1.5 rounded-md hover:bg-white text-slate-400 hover:text-slate-700 transition-all duration-200" title="Mail logo">
+                                    <i data-lucide="mail" class="w-4 h-4"></i>
+                                </button>
+                                <button onclick="selectLogoPreset('shield')" id="logo-shield" class="logo-preset p-1.5 rounded-md hover:bg-white text-slate-400 hover:text-slate-700 transition-all duration-200" title="Secured logo">
+                                    <i data-lucide="lock" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div id="customLogoUploadContainer" class="hidden transition-all duration-300">
+                            <label class="flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-2xl p-4 bg-slate-50/50 hover:bg-tech-50/20 hover:border-tech-500/40 cursor-pointer transition-all duration-200">
+                                <div class="flex items-center gap-2">
+                                    <i data-lucide="image" class="w-5 h-5 text-tech-500"></i>
+                                    <span class="text-xs font-semibold text-slate-600" id="uploadedLogoLabel">Upload PNG / JPEG Logo (Max 500kb)</span>
+                                </div>
+                                <input type="file" id="customLogoInput" accept="image/*" class="hidden" onchange="handleLogoUpload(event)">
+                            </label>
+                        </div>
+                    </div>
+                    <div class="pt-4 border-t border-slate-200/50 grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="space-y-1">
+                            <label class="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1">
+                                Error Correction Level
+                                <i data-lucide="help-circle" class="w-3.5 h-3.5 text-slate-400 cursor-help" title="Higher recovery level allows adding larger custom logos and preserves scan readability on scratched surfaces."></i>
+                            </label>
+                            <select id="errorCorrection" onchange="updateQRRealtime()" class="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-xs font-semibold text-slate-700 focus:outline-none">
+                                <option value="H">High (30% Recovery - Recommended for Logos)</option>
+                                <option value="Q">Quartile (25% Recovery)</option>
+                                <option value="M">Medium (15% Recovery)</option>
+                                <option value="L">Low (7% Recovery)</option>
+                            </select>
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Rendering Resolution</label>
+                            <select id="exportSize" class="w-full bg-white border border-slate-200 rounded-xl py-2 px-3 text-xs font-semibold text-slate-700 focus:outline-none">
+                                <option value="512">512 px x 512 px (Web standard)</option>
+                                <option value="1024" selected>1024 px x 1024 px (Ultra HD print)</option>
+                                <option value="2048">2048 px x 2048 px (High-fidelity vector match)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <section class="lg:col-span-5 tilt-container sticky top-6">
+                <div id="previewCard" class="tilt-card glass-panel p-8 rounded-[36px] border border-white/80 shadow-premium flex flex-col items-center justify-between min-h-[500px] overflow-hidden relative">
+                    <div class="absolute inset-0 bg-gradient-to-tr from-tech-50/20 via-transparent to-tech-accent/5 pointer-events-none"></div>
+                    <div class="absolute top-4 left-4 text-[10px] font-mono tracking-widest text-slate-400 select-none">SYSTEM.PREVIEW_ACTIVE</div>
+                    <div class="absolute top-4 right-4 flex items-center gap-1 text-[10px] font-mono text-emerald-500 select-none">
+                        <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
+                        LIVE COMPILING
+                    </div>
+                    <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 rounded-full border border-tech-500/5 pointer-events-none floating-orbit z-0">
+                        <div class="absolute top-0 left-1/2 w-2 h-2 rounded-full bg-tech-400/30 -translate-x-1/2"></div>
+                        <div class="absolute bottom-0 left-1/2 w-1.5 h-1.5 rounded-full bg-tech-accent/40 -translate-x-1/2"></div>
+                    </div>
+                    <div id="glareEffect" class="absolute inset-0 pointer-events-none opacity-0 transition-opacity duration-300 bg-gradient-to-tr from-transparent via-white/15 to-transparent z-10"></div>
+                    <div class="relative w-72 h-72 sm:w-80 sm:h-80 my-auto flex items-center justify-center bg-white/40 backdrop-blur-md rounded-[32px] p-5 shadow-sm border border-white/50 z-10 inner-3d">
+                        <div class="absolute inset-0 border border-tech-500/10 rounded-[32px] pointer-events-none"></div>
+                        <div class="absolute inset-2 border border-dashed border-tech-500/10 rounded-[28px] pointer-events-none"></div>
+                        <div id="scannerLine" class="scan-line absolute left-4 right-4 h-1 bg-gradient-to-r from-transparent via-tech-accent to-transparent z-20 pointer-events-none rounded shadow-[0_0_15px_rgba(0,210,255,1)]"></div>
+                        <div class="relative w-full h-full bg-white rounded-2xl overflow-hidden p-3 shadow-md flex items-center justify-center">
+                            <canvas id="qrCanvas" class="w-full h-full object-contain transition-transform duration-300"></canvas>
+                        </div>
+                    </div>
+                    <div class="w-full space-y-4 z-10 mt-6">
+                        <div class="flex items-center justify-between text-xs font-mono text-slate-500 px-2">
+                            <div class="flex items-center gap-1">
+                                <span class="text-[10px] uppercase">Format:</span>
+                                <span class="text-slate-700 font-bold" id="hudFormat">PNG HD</span>
+                            </div>
+                            <div class="flex items-center gap-1">
+                                <span class="text-[10px] uppercase">Size:</span>
+                                <span class="text-slate-700 font-bold" id="hudResolution">1024px</span>
+                            </div>
+                        </div>
+                        <div class="flex flex-col sm:flex-row gap-3">
+                            <button onclick="downloadQR()" class="flex-1 bg-gradient-to-r from-tech-600 to-tech-500 text-white font-bold text-sm py-4 px-6 rounded-2xl shadow-premium hover:shadow-glow hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-2 group">
+                                <i data-lucide="download" class="w-4 h-4 group-hover:-translate-y-0.5 transition-transform"></i>
+                                <span>Download Architecture</span>
+                            </button>
+                            <button onclick="copyToClipboard()" class="sm:w-16 bg-white hover:bg-slate-50 text-slate-700 font-bold text-sm py-4 rounded-2xl border border-slate-200/80 hover:border-slate-300 flex items-center justify-center transition-all duration-200 active:scale-[0.95]" title="Copy Image to Clipboard">
+                                <i data-lucide="copy" class="w-4.5 h-4.5"></i>
+                            </button>
+                            <button onclick="triggerWebShare()" class="sm:w-16 bg-white hover:bg-slate-50 text-slate-700 font-bold text-sm py-4 rounded-2xl border border-slate-200/80 hover:border-slate-300 flex items-center justify-center transition-all duration-200 active:scale-[0.95]" title="Share Asset">
+                                <i data-lucide="share-2" class="w-4.5 h-4.5"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div id="notificationToast" class="fixed bottom-6 right-6 z-50 transform translate-y-20 opacity-0 pointer-events-none transition-all duration-500 ease-out flex items-center gap-3 glass-panel px-6 py-4 rounded-2xl border-l-4 border-l-tech-500 shadow-premium max-w-sm">
+                    <div class="w-8 h-8 rounded-full bg-tech-50 flex items-center justify-center text-tech-600" id="toastIcon">
+                        <i data-lucide="info" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-xs font-bold text-slate-800" id="toastTitle">System Alert</h4>
+                        <p class="text-[11px] text-slate-500 font-medium mt-0.5" id="toastMessage">Information saved successfully.</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+        <footer class="text-center py-6 border-t border-slate-200/50 mt-8 relative z-10 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-slate-500 font-medium">
+            <p>© 2026 QR Studio. Engineered for next-generation smart devices.</p>
+            <div class="flex items-center gap-4">
+                <a href="#tutorial" onclick="showTutorial()" class="hover:text-tech-600 transition-colors">Integration Guide</a>
+                <span>•</span>
+                <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span> Local Decryption Safe</span>
+            </div>
+        </footer>
+    </div>
+
+    <script src="app.js" defer></script>
+</body>
+</html>
